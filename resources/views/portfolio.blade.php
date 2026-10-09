@@ -8,7 +8,7 @@
 <style>
 :root{--ink:#211936;--muted:#756d86;--purple:#7654d6;--line:#e9e3f5;--bg:#f7f5fc}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Arial,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Arial,sans-serif}
 header{background:#fff;border-bottom:1px solid var(--line);padding:17px max(22px,calc((100% - 900px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px}
 header strong{font-size:23px;color:var(--purple)}
 header span{color:var(--muted)}
@@ -35,7 +35,8 @@ main{max-width:900px;margin:28px auto;padding:0 20px}
 .btn:hover{filter:brightness(.96)}
 .notice{display:none;margin-top:15px;padding:12px;border-radius:10px;background:#f0eaff;color:#4d388b}
 footer{text-align:center;color:#9289a2;font-size:12px;padding:20px}
-@media(max-width:600px){header{padding:15px 20px}.grid2,.templates{grid-template-columns:1fr}.panel{padding:17px}}
+@media(max-width:600px){header{padding:15px 20px}.grid2,.templates{grid-template-columns:1fr}.panel{padding:17px}header span{font-size:12px}}
+
 </style>
 </head>
 <body>
@@ -88,8 +89,7 @@ footer{text-align:center;color:#9289a2;font-size:12px;padding:20px}
 <script>
 const ids=['name','job','email','phone','address','about','education','skills','projects','experience','links','extra'];
 const $=id=>document.getElementById(id);
-let photoData='';
-let savedData=null;
+let photoData='',savedData=null;
 
 function getData(){
  const d={};
@@ -109,10 +109,10 @@ function save(){
  try{
   localStorage.setItem('creatique_portfolio_v1',JSON.stringify(d));
   savedData=d;
-  notify('Your information has been saved. You can now generate your portfolio.');
+  notify('Your information has been saved successfully.');
   return true;
  }catch(e){
-  notify('Unable to save. Your profile picture may be too large; try a smaller image.');
+  notify('Unable to save. Please try a smaller profile picture.');
   return false;
  }
 }
@@ -127,38 +127,102 @@ function generate(d){
  const skills=d.skills?d.skills.split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="pill">${safe(s)}</span>`).join(''):'';
  const links=d.links?d.links.split(/\n/).map(s=>s.trim()).filter(Boolean).map(s=>{
   const url=/^https?:\/\//i.test(s)?s:'https://'+s;
-  return `<p><a href="${safe(url)}" target="_blank" rel="noopener">${safe(s)}</a></p>`;
+  return `<a class="social-link" href="${safe(url)}" target="_blank" rel="noopener">${safe(s)}</a>`;
  }).join(''):'';
 
  const content=`
- <div class="hero">
- ${d.photo?`<img class="avatar" src="${d.photo}" alt="Profile picture">`:''}
- <h1>${safe(d.name)||'Your Name'}</h1>
- <div class="job">${safe(d.job)||'Professional'}</div>
- <p>${safe(d.about)}</p>
- <div class="contact">${[d.email,d.phone,d.address].filter(Boolean).map(safe).join(' · ')}</div>
- </div>
+ <header class="profile-hero">
+  <div class="photo-wrap">
+   ${d.photo?`<img class="avatar" src="${d.photo}" alt="Profile picture">`:`<div class="avatar placeholder">${safe(d.name.charAt(0)||'Y')}</div>`}
+  </div>
+  <div class="profile-info">
+   <div class="eyebrow">PORTFOLIO</div>
+   <h1>${safe(d.name)||'Your Name'}</h1>
+   <div class="job">${safe(d.job)||'Professional'}</div>
+   ${d.about?`<p class="about">${safe(d.about)}</p>`:''}
+   <div class="contact">${[d.email,d.phone,d.address].filter(Boolean).map(safe).join(' <span>·</span> ')}</div>
+  </div>
+ </header>
  <div class="bodycontent">
- ${section('Education',d.education)}
- ${skills?`<section class="section"><h2>Skills</h2>${skills}</section>`:''}
- ${section('Projects',d.projects)}
- ${section('Work experience',d.experience)}
- ${links?`<section class="section"><h2>Find me online</h2>${links}</section>`:''}
- ${section('Additional information',d.extra)}
+  ${section('Education',d.education)}
+  ${skills?`<section class="section"><h2>Skills</h2><div class="skill-list">${skills}</div></section>`:''}
+  ${section('Projects',d.projects)}
+  ${section('Work experience',d.experience)}
+  ${links?`<section class="section"><h2>Find me online</h2><div class="links">${links}</div></section>`:''}
+  ${section('Additional information',d.extra)}
  </div>`;
 
+ const common=`
+ *{box-sizing:border-box}
+ body{margin:0;font:16px/1.7 Arial,sans-serif;overflow-wrap:anywhere}
+ .portfolio{max-width:960px;margin:36px auto;background:inherit;min-height:80vh}
+ .profile-hero{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:center;gap:36px;padding:46px 52px}
+ .photo-wrap{display:flex;justify-content:center;align-items:center}
+ .avatar{display:block;width:164px;height:164px;object-fit:cover;border-radius:50%;background:#e9e3f5}
+ .placeholder{display:grid;place-items:center;font-size:58px;font-weight:700;color:#7654d6}
+ .profile-info{min-width:0}
+ .eyebrow{font-size:11px;letter-spacing:3px;font-weight:700;opacity:.7;margin-bottom:8px}
+ .profile-info h1{font-size:clamp(30px,4vw,43px);line-height:1.15;overflow-wrap:anywhere;margin:0 0 9px}
+ .job{font-size:18px;font-weight:700;margin-bottom:12px}
+ .about{white-space:pre-wrap;margin:0 0 14px;max-width:600px}
+ .contact{font-size:13px;line-height:1.8;overflow-wrap:anywhere}
+ .contact span{padding:0 5px;opacity:.65}
+ .bodycontent{padding:30px 52px 48px}
+ .section{margin:0 0 30px;min-width:0}
+ .section h2{font-size:14px;text-transform:uppercase;letter-spacing:1.8px;margin:0 0 12px}
+ .section p{margin:0;white-space:pre-wrap}
+ .skill-list{display:flex;flex-wrap:wrap;gap:8px}
+ .pill{display:inline-block;padding:6px 12px;font-size:13px}
+ .links{display:flex;flex-wrap:wrap;gap:10px}
+ .social-link{display:inline-block;overflow-wrap:anywhere}
+ @media(max-width:620px){
+  .portfolio{margin:0;min-height:100vh}
+  .profile-hero{grid-template-columns:1fr;text-align:center;gap:18px;padding:32px 22px}
+  .avatar{width:130px;height:130px}
+  .profile-info h1{font-size:32px}
+  .about{margin-left:auto;margin-right:auto}
+  .bodycontent{padding:28px 24px}
+  .contact{font-size:12px}
+ }
+ `;
+
  const styles={
-  simple:`body{font:16px/1.6 Arial,sans-serif;color:#28213a;background:#fff}.hero{padding:38px;border-bottom:1px solid #ddd}.bodycontent{padding:30px 38px}.avatar{width:90px;height:90px;object-fit:cover;border-radius:50%}.job{color:#7654d6}.section{margin:22px 0}.section h2{font-size:15px;color:#7654d6;text-transform:uppercase;letter-spacing:1px}.pill{display:inline-block;background:#f0eaff;border-radius:20px;padding:5px 10px;margin:4px}`,
-  modern:`body{font:16px/1.6 Arial,sans-serif;color:#fff;background:#211936}.hero{padding:42px;background:#211936;border-bottom:4px solid #a994ff}.bodycontent{padding:30px 38px}.avatar{width:100px;height:100px;object-fit:cover;border-radius:14px}.job,.section h2{color:#a994ff}.section{margin:24px 0}.section h2{text-transform:uppercase;letter-spacing:1px;font-size:15px}.contact{color:#ddd}.pill{display:inline-block;background:#3b3154;border-radius:7px;padding:5px 10px;margin:4px}a{color:#c9baff}`,
-  creative:`body{font:16px/1.6 Arial,sans-serif;color:#302044;background:#fff8fc}.hero{padding:38px;background:linear-gradient(125deg,#fbe8f1,#e9e5ff 60%,#dcf7f1);border-bottom:5px solid #7654d6}.bodycontent{padding:30px 38px}.avatar{width:100px;height:100px;object-fit:cover;border-radius:22px;border:4px solid #fff}.job{color:#7654d6;font-weight:bold}.section{padding-left:14px;border-left:3px solid #ded3ff;margin:24px 0}.section h2{color:#7654d6;font-size:15px;text-transform:uppercase;letter-spacing:1px}.pill{display:inline-block;background:#e9e5ff;border-radius:20px;padding:5px 10px;margin:4px}`
+ simple:`
+ body{color:#28213a;background:#fff}
+ .profile-hero{border-bottom:1px solid #e6e0ef}
+ .avatar{border-radius:50%}
+ .job,.section h2{color:#7654d6}
+ .pill{background:#f0eaff;border-radius:20px}
+ .social-link{color:#7654d6}
+ `,
+ modern:`
+ body{color:#f8f6ff;background:#211936}
+ .profile-hero{background:#211936;border-bottom:4px solid #a994ff}
+ .avatar{border-radius:18px;border:3px solid #554474}
+ .placeholder{background:#3b3154}
+ .eyebrow,.job,.section h2{color:#bba9ff}
+ .contact{color:#d7cfea}
+ .pill{background:#3b3154;border-radius:8px}
+ .social-link{color:#c9baff}
+ `,
+ creative:`
+ body{color:#302044;background:#fff8fc}
+ .profile-hero{background:linear-gradient(125deg,#fbe8f1,#e9e5ff 60%,#dcf7f1);border-bottom:5px solid #7654d6}
+ .avatar{border-radius:25px;border:4px solid #fff;box-shadow:0 8px 24px #38204c18}
+ .eyebrow,.job,.section h2{color:#7654d6}
+ .pill{background:#e9e5ff;border-radius:20px}
+ .section{padding-left:16px;border-left:3px solid #ded3ff}
+ .social-link{color:#7654d6}
+ `
  };
+
  const w=window.open('','_blank');
  if(!w){
-  notify('Your browser blocked the portfolio window. Allow pop-ups for this site and try again.');
+  notify('Your browser blocked the new tab. Allow pop-ups for this site, then try again.');
   return;
  }
  w.document.open();
- w.document.write(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe(d.name)} | Portfolio</title><style>*{box-sizing:border-box}body{margin:0}.portfolio{max-width:900px;margin:30px auto;background:inherit;min-height:80vh;overflow-wrap:anywhere}.hero h1{font-size:36px;line-height:1.2;margin:12px 0}.hero p{white-space:pre-wrap}.contact{font-size:13px;margin-top:14px}.bodycontent p{white-space:pre-wrap}.section{margin-bottom:24px}.pill{font-size:13px}a{overflow-wrap:anywhere}@media(max-width:600px){.portfolio{margin:0}.hero,.bodycontent{padding:24px!important}.hero h1{font-size:29px}}</style><style>${styles[d.template]||styles.simple}</style></head><body><article class="portfolio ${safe(d.template)}">${content}</article></body></html>`);
+ w.document.write(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe(d.name)} | Portfolio</title><style>${common}${styles[d.template]||styles.simple}</style></head><body><article class="portfolio ${safe(d.template)}">${content}</article></body></html>`);
  w.document.close();
  notify('Your portfolio has been generated in a new tab.');
 }
@@ -168,31 +232,38 @@ $('portfolioForm').addEventListener('submit',e=>{
  save();
 });
 $('generateBtn').addEventListener('click',()=>{
- if(!savedData&&!localStorage.getItem('creatique_portfolio_v1')){
-  notify('Please save your information first.');
-  return;
- }
- const d=getData();
- if(!savedData){
-  try{savedData=JSON.parse(localStorage.getItem('creatique_portfolio_v1'))}catch(e){}
- }
- if(!savedData){notify('Please save your information first.');return}
- // Generate using the current selected template and latest form values.
  if(!$('portfolioForm').reportValidity())return;
  const latest=getData();
- try{localStorage.setItem('creatique_portfolio_v1',JSON.stringify(latest));savedData=latest}catch(e){}
+ try{
+  localStorage.setItem('creatique_portfolio_v1',JSON.stringify(latest));
+  savedData=latest;
+ }catch(e){
+  notify('Unable to save. Please try a smaller profile picture.');
+  return;
+ }
  generate(latest);
 });
 $('photo').addEventListener('change',e=>{
  const file=e.target.files[0];
  if(!file){photoData='';return}
- if(!file.type.startsWith('image/')){notify('Please choose an image file.');return}
+ if(!file.type.startsWith('image/')){
+  notify('Please choose an image file.');
+  return;
+ }
+ if(file.size>3*1024*1024){
+  notify('Please choose a profile picture smaller than 3 MB.');
+  e.target.value='';
+  return;
+ }
  const reader=new FileReader();
- reader.onload=()=>{photoData=reader.result;notify('Profile picture selected. Save your information to keep it.')};
+ reader.onload=()=>{
+  photoData=reader.result;
+  notify('Profile picture selected. Save or generate your portfolio to keep it.');
+ };
  reader.readAsDataURL(file);
 });
 document.querySelectorAll('input[name="template"]').forEach(el=>el.addEventListener('change',()=>{
- notify('Template selected: '+el.value+'. Save your information before generating.');
+ notify('Template selected: '+el.value+'.');
 }));
 $('clearBtn').addEventListener('click',()=>{
  if(!confirm('Clear all portfolio details?'))return;
